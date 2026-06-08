@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Nature RTX Window — FIXED</title>
+<title>Pure Code Nature Window</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -10,40 +10,87 @@
 
   .window { position: fixed; inset: 0; overflow: hidden; }
 
-  .layer {
+  /* SKY */
+  #sky {
     position: absolute;
     inset: 0;
-    background-size: cover;
-    background-position: center;
-    transition: opacity .5s ease, filter .5s ease;
+    background: linear-gradient(to bottom, #7bb0ff, #bcd9ff 40%, #dff3ff 70%);
+    transition: filter .5s ease, background .5s ease;
   }
 
+  /* MOUNTAINS (pure CSS shapes) */
+  #mountains {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 80%, #4a5a6a 0%, transparent 60%),
+      radial-gradient(circle at 70% 85%, #5c6d7e 0%, transparent 60%),
+      radial-gradient(circle at 50% 95%, #3c4a55 0%, transparent 60%);
+    filter: blur(2px);
+    opacity: 0.9;
+    transition: filter .5s ease;
+  }
+
+  /* LAKE REFLECTION */
+  #lake {
+    position: absolute;
+    inset: 50% 0 0 0;
+    background:
+      linear-gradient(to bottom, rgba(255,255,255,0.2), rgba(0,0,0,0.4)),
+      radial-gradient(circle at 30% 20%, #4a5a6a 0%, transparent 60%),
+      radial-gradient(circle at 70% 25%, #5c6d7e 0%, transparent 60%),
+      radial-gradient(circle at 50% 35%, #3c4a55 0%, transparent 60%);
+    filter: blur(3px);
+    opacity: 0.7;
+  }
+
+  /* FOG */
   #fog {
     position: absolute;
     inset: 0;
-    background: rgba(255,255,255,0.15);
+    background: radial-gradient(circle at 50% 80%, rgba(255,255,255,0.4), transparent 70%);
     mix-blend-mode: screen;
-    opacity: 0;
-    pointer-events: none;
+    opacity: 0.2;
     transition: opacity .3s ease;
   }
 
+  /* WHITEOUT */
   #whiteout {
     position: absolute;
     inset: 0;
     background: rgba(255,255,255,0.25);
     mix-blend-mode: screen;
     opacity: 0;
-    pointer-events: none;
     transition: opacity .3s ease;
   }
 
+  /* CLOUDS */
+  #clouds {
+    position: absolute;
+    inset: -20% -40%;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,.25), transparent 55%),
+      radial-gradient(circle at 60% 40%, rgba(255,255,255,.22), transparent 55%),
+      radial-gradient(circle at 80% 60%, rgba(255,255,255,.20), transparent 55%);
+    filter: blur(18px);
+    opacity: .45;
+    animation: drift 60s linear infinite;
+  }
+
+  @keyframes drift {
+    0%   { transform: translateX(-10%); }
+    50%  { transform: translateX(10%); }
+    100% { transform: translateX(-10%); }
+  }
+
+  /* RAIN CANVAS */
   #rainCanvas {
     position: absolute;
     inset: 0;
     pointer-events: none;
   }
 
+  /* UI */
   .ui {
     position: absolute;
     bottom: 20px;
@@ -59,39 +106,21 @@
     gap: 10px;
   }
 
-  button {
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,.3);
-    background: rgba(255,255,255,.1);
-    color: #fff;
-    cursor: pointer;
-  }
-
-  button.active {
-    background: #4f8cff;
-    border-color: #fff;
-  }
-
   input[type=range] { width: 180px; }
 </style>
 </head>
 <body>
 
 <div class="window">
-  <div id="layer" class="layer"></div>
+  <div id="sky"></div>
+  <div id="mountains"></div>
+  <div id="lake"></div>
+  <div id="clouds"></div>
   <div id="fog"></div>
   <div id="whiteout"></div>
   <canvas id="rainCanvas"></canvas>
 
   <div class="ui">
-    <div style="display:flex; gap:6px;">
-      <button class="scene" data-bg="https://upload.wikimedia.org/wikipedia/commons/0/0c/Misty_mountain_lake.jpg">🌫 Mist</button>
-      <button class="scene" data-bg="https://upload.wikimedia.org/wikipedia/commons/3/3f/Forest_fog_valley.jpg">🌲 Forest</button>
-      <button class="scene" data-bg="https://upload.wikimedia.org/wikipedia/commons/5/5f/Mountain_range_panorama.jpg">⛰ Peaks</button>
-      <button class="scene" data-bg="https://upload.wikimedia.org/wikipedia/commons/4/4f/Mountain_sunset.jpg">🌇 Sunset</button>
-    </div>
-
     <div>
       Rain
       <input id="rainSlider" type="range" min="50" max="700" value="250">
@@ -105,29 +134,7 @@
 </div>
 
 <script>
-/* Background switching */
-const layer = document.getElementById("layer");
-const sceneButtons = document.querySelectorAll(".scene");
-
-sceneButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    sceneButtons.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    layer.style.opacity = 0;
-    setTimeout(() => {
-      layer.style.backgroundImage = `url(${btn.dataset.bg})`;
-      layer.style.opacity = 1;
-    }, 200);
-  });
-});
-
-/* Default scene */
-layer.style.backgroundImage =
-  "url(https://upload.wikimedia.org/wikipedia/commons/0/0c/Misty_mountain_lake.jpg)";
-sceneButtons[0].classList.add("active");
-
-/* Rain engine */
+/* RAIN ENGINE */
 const canvas = document.getElementById("rainCanvas");
 const ctx = canvas.getContext("2d");
 let W, H;
@@ -180,11 +187,11 @@ function drawRain() {
 }
 drawRain();
 
-/* Fog + whiteout */
+/* FOG + WHITEOUT */
 const fog = document.getElementById("fog");
 const whiteout = document.getElementById("whiteout");
 
-/* Rain slider */
+/* RAIN SLIDER */
 document.getElementById("rainSlider").addEventListener("input", e => {
   dropCount = Number(e.target.value);
   speedMultiplier = 1 + (dropCount / 700) * 1.6;
@@ -195,13 +202,21 @@ document.getElementById("rainSlider").addEventListener("input", e => {
   whiteout.style.opacity = t * 0.4;
 });
 
-/* Time slider */
+/* TIME SLIDER */
 document.getElementById("timeSlider").addEventListener("input", e => {
   const v = e.target.value / 100;
-  const brightness = 0.4 + v * 1.2;
-  const tint = (v - 0.5) * 40;
 
-  layer.style.filter = `brightness(${brightness}) hue-rotate(${tint}deg)`;
+  // sky color shift
+  const sky = document.getElementById("sky");
+  sky.style.filter = `brightness(${0.6 + v})`;
+
+  // mountains darker at night
+  const mountains = document.getElementById("mountains");
+  mountains.style.filter = `brightness(${0.5 + v})`;
+
+  // lake reflection brightness
+  const lake = document.getElementById("lake");
+  lake.style.filter = `brightness(${0.5 + v})`;
 });
 </script>
 
