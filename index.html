@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tokyo RTX Window — Fixed</title>
+<title>Nature RTX Window</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #000; overflow: hidden; font-family: system-ui; }
+  body { background: #000; overflow: hidden; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 
   .window {
     position: fixed;
@@ -14,7 +14,6 @@
     overflow: hidden;
   }
 
-  /* CITY LAYERS */
   .layer {
     position: absolute;
     inset: 0;
@@ -24,11 +23,51 @@
     will-change: transform;
   }
 
-  #layer-back { filter: brightness(.7) blur(1px); }
-  #layer-mid { mix-blend-mode: screen; opacity: .8; }
-  #layer-front { mix-blend-mode: screen; opacity: .9; }
+  #layer-back { filter: brightness(.7) saturate(1.1); }
+  #layer-mid  { mix-blend-mode: screen; opacity: .8; }
+  #layer-front{ mix-blend-mode: screen; opacity: .9; }
 
-  /* RAIN CANVAS */
+  /* Fog + white wash */
+  #fogLayer {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at bottom, rgba(220,230,240,.4), transparent 60%);
+    mix-blend-mode: screen;
+    opacity: .2;
+    pointer-events: none;
+    transition: opacity .3s ease;
+  }
+
+  #whiteWash {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(255,255,255,.18), transparent 40%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease;
+  }
+
+  /* Clouds */
+  #clouds {
+    position: absolute;
+    inset: -20% -40%;
+    background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,.18), transparent 55%),
+                      radial-gradient(circle at 60% 40%, rgba(255,255,255,.16), transparent 55%),
+                      radial-gradient(circle at 80% 60%, rgba(255,255,255,.14), transparent 55%);
+    filter: blur(18px);
+    opacity: .45;
+    animation: drift 60s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes drift {
+    0%   { transform: translateX(-10%); }
+    50%  { transform: translateX(10%); }
+    100% { transform: translateX(-10%); }
+  }
+
+  /* Rain canvas */
   #rainCanvas {
     position: absolute;
     inset: 0;
@@ -38,141 +77,174 @@
   /* UI */
   .ui {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 18px;
+    left: 18px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    background: rgba(0,0,0,.4);
-    padding: 14px;
+    gap: 10px;
+    background: rgba(0,0,0,.45);
+    padding: 12px;
     border-radius: 12px;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 12px;
+  }
+
+  .row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
   button {
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 8px;
     border: 1px solid rgba(255,255,255,.3);
-    background: rgba(255,255,255,.1);
+    background: rgba(255,255,255,.08);
     color: #fff;
     cursor: pointer;
+    font-size: 11px;
+  }
+
+  button.active {
+    background: linear-gradient(135deg, #4f8cff, #9f7bff);
+    border-color: rgba(255,255,255,.8);
+    box-shadow: 0 0 12px rgba(120,180,255,.8);
   }
 
   button:hover {
-    background: rgba(255,255,255,.2);
+    background: rgba(255,255,255,.18);
   }
 
   .slider-box {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    color: #fff;
-    font-size: 12px;
+    gap: 2px;
   }
 
   input[type=range] {
     width: 180px;
+  }
+
+  @media (max-width: 640px) {
+    .ui { font-size: 11px; }
+    input[type=range] { width: 150px; }
   }
 </style>
 </head>
 <body>
 
 <div class="window">
-  <div id="layer-back" class="layer"></div>
-  <div id="layer-mid" class="layer"></div>
+  <div id="layer-back"  class="layer"></div>
+  <div id="layer-mid"   class="layer"></div>
   <div id="layer-front" class="layer"></div>
+
+  <div id="clouds"></div>
+  <div id="fogLayer"></div>
+  <div id="whiteWash"></div>
+
   <canvas id="rainCanvas"></canvas>
 
   <div class="ui">
-    <div style="display:flex; gap:6px;">
-      <button onclick="setScene('night')">🌃 Night</button>
-      <button onclick="setScene('rain')">🌧 Rain</button>
-      <button onclick="setScene('sunset')">🌇 Sunset</button>
-      <button onclick="setScene('clear')">🌤 Clear</button>
+    <div class="row">
+      <button class="scene-btn active" data-scene="mist">🌫 Misty Lake</button>
+      <button class="scene-btn" data-scene="ravine">🏞 Ravine</button>
+      <button class="scene-btn" data-scene="forest">🌲 Deep Forest</button>
+      <button class="scene-btn" data-scene="peaks">⛰ Peaks</button>
     </div>
 
     <div class="slider-box">
-      Rain Level
-      <input id="rainSlider" type="range" min="50" max="600" value="250">
+      <span>Rain level</span>
+      <input id="rainSlider" type="range" min="50" max="700" value="260">
     </div>
 
     <div class="slider-box">
-      Time of Day
-      <input id="timeSlider" type="range" min="0" max="100" value="50">
+      <span>Time of day</span>
+      <input id="timeSlider" type="range" min="0" max="100" value="45">
     </div>
   </div>
 </div>
 
 <script>
-/* SCENE IMAGES */
+/* Nature scenes */
 const scenes = {
-  night: {
-    back: "https://images.unsplash.com/photo-1505761671935-60b3a7427bad",
-    mid: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0",
-    front: "https://images.unsplash.com/photo-1518300670681-9bbd45a4a8bb"
+  mist: {
+    back:  "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    mid:   "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    front: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80"
   },
-  rain: {
-    back: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29",
-    mid: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29",
-    front: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29"
+  ravine: {
+    back:  "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    mid:   "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    front: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80"
   },
-  sunset: {
-    back: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-    mid: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-    front: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee"
+  forest: {
+    back:  "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    mid:   "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    front: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80"
   },
-  clear: {
-    back: "https://images.unsplash.com/photo-1500043201641-5f04c36c12c7",
-    mid: "https://images.unsplash.com/photo-1500043201641-5f04c36c12c7",
-    front: "https://images.unsplash.com/photo-1500043201641-5f04c36c12c7"
+  peaks: {
+    back:  "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    mid:   "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    front: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80"
   }
 };
 
-const back = document.getElementById("layer-back");
-const mid = document.getElementById("layer-mid");
+const back  = document.getElementById("layer-back");
+const mid   = document.getElementById("layer-mid");
 const front = document.getElementById("layer-front");
+const fog   = document.getElementById("fogLayer");
+const whiteWash = document.getElementById("whiteWash");
+const cloudLayer = document.getElementById("clouds");
+const sceneButtons = document.querySelectorAll(".scene-btn");
 
 function setScene(name) {
   const s = scenes[name];
+  if (!s) return;
+
   back.style.opacity = 0;
   mid.style.opacity = 0;
   front.style.opacity = 0;
 
   setTimeout(() => {
-    back.style.backgroundImage = `url(${s.back})`;
-    mid.style.backgroundImage = `url(${s.mid})`;
+    back.style.backgroundImage  = `url(${s.back})`;
+    mid.style.backgroundImage   = `url(${s.mid})`;
     front.style.backgroundImage = `url(${s.front})`;
 
     back.style.opacity = 1;
     mid.style.opacity = 1;
     front.style.opacity = 1;
-  }, 300);
+  }, 250);
+
+  sceneButtons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.scene === name);
+  });
 }
 
-/* PARALLAX */
+/* Parallax */
 document.addEventListener("mousemove", e => {
   const x = (e.clientX / innerWidth - 0.5) * 2;
   const y = (e.clientY / innerHeight - 0.5) * 2;
 
-  back.style.transform = `translate(${x * -6}px, ${y * -3}px)`;
-  mid.style.transform = `translate(${x * -12}px, ${y * -6}px)`;
+  back.style.transform  = `translate(${x * -6}px, ${y * -3}px)`;
+  mid.style.transform   = `translate(${x * -12}px, ${y * -6}px)`;
   front.style.transform = `translate(${x * -18}px, ${y * -9}px)`;
 });
 
-/* RAIN */
+/* Rain */
 const canvas = document.getElementById("rainCanvas");
 const ctx = canvas.getContext("2d");
 let W, H;
 
 function resize() {
-  W = canvas.width = innerWidth;
-  H = canvas.height = innerHeight;
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
 }
 resize();
-addEventListener("resize", resize);
+window.addEventListener("resize", resize);
 
 let drops = [];
-let dropCount = 250;
+let dropCount = 260;
 
 function initRain() {
   drops = [];
@@ -180,8 +252,9 @@ function initRain() {
     drops.push({
       x: Math.random() * W,
       y: Math.random() * H,
-      len: 10 + Math.random() * 20,
-      speed: 4 + Math.random() * 6
+      len: 8 + Math.random() * 22,
+      speed: 3 + Math.random() * 7,
+      opacity: 0.3 + Math.random() * 0.5
     });
   }
 }
@@ -189,10 +262,10 @@ initRain();
 
 function drawRain() {
   ctx.clearRect(0, 0, W, H);
-  ctx.strokeStyle = "rgba(190,210,255,0.7)";
   ctx.lineWidth = 1;
 
   drops.forEach(d => {
+    ctx.strokeStyle = `rgba(210,225,255,${d.opacity})`;
     ctx.beginPath();
     ctx.moveTo(d.x, d.y);
     ctx.lineTo(d.x + d.len * 0.2, d.y + d.len);
@@ -201,7 +274,7 @@ function drawRain() {
     d.y += d.speed;
     d.x += d.speed * 0.2;
 
-    if (d.y > H) {
+    if (d.y > H + 20) {
       d.y = -20;
       d.x = Math.random() * W;
     }
@@ -211,24 +284,40 @@ function drawRain() {
 }
 drawRain();
 
-/* SLIDERS */
-document.getElementById("rainSlider").oninput = e => {
+/* Sliders */
+const rainSlider = document.getElementById("rainSlider");
+const timeSlider = document.getElementById("timeSlider");
+
+rainSlider.addEventListener("input", e => {
   dropCount = Number(e.target.value);
   initRain();
-};
 
-document.getElementById("timeSlider").oninput = e => {
-  const v = e.target.value / 100;
-  const brightness = 0.4 + v * 1.2;
-  const tint = v * 40;
+  const t = (dropCount - 50) / (700 - 50); // 0 → 1
+  fog.style.opacity = 0.15 + t * 0.5;      // more rain = more fog
+  whiteWash.style.opacity = t * 0.6;       // more rain = more white wash
+});
 
-  back.style.filter = `brightness(${brightness}) blur(1px)`;
-  mid.style.filter = `brightness(${brightness}) hue-rotate(${tint}deg)`;
+timeSlider.addEventListener("input", e => {
+  const v = e.target.value / 100; // 0–1
+  const brightness = 0.35 + v * 1.3; // darker → brighter
+  const tint = (v - 0.5) * 40;       // slight hue shift
+
+  back.style.filter  = `brightness(${brightness}) saturate(1.05)`;
+  mid.style.filter   = `brightness(${brightness}) hue-rotate(${tint}deg)`;
   front.style.filter = `brightness(${brightness}) hue-rotate(${tint}deg)`;
-};
 
-/* DEFAULT */
-setScene("night");
+  cloudLayer.style.opacity = 0.25 + (1 - Math.abs(v - 0.5)) * 0.35;
+});
+
+/* Scene button events */
+sceneButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    setScene(btn.dataset.scene);
+  });
+});
+
+/* Default */
+setScene("mist");
 </script>
 
 </body>
