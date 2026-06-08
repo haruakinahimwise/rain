@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tokyo RTX Window</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background: #02030a;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #e5f0ff;
+  }
+
+  .window-wrap {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: radial-gradient(circle at top, #10172a 0, #02030a 55%, #000 100%);
+  }
+
+  .window-frame {
+    position: relative;
+    width: min(1100px, 100%);
+    height: min(620px, 70vh);
+    border-radius: 22px;
+    background: #050814;
+    box-shadow:
+      0 0 60px rgba(0, 0, 0, 0.9),
+      0 0 120px rgba(80, 140, 255, 0.35);
+    overflow: hidden;
+    border: 1px solid rgba(150, 200, 255, 0.35);
+  }
+
+  /* Glass border + frame */
+  .inner-frame {
+    position: absolute;
+    inset: 18px 18px 60px 18px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(200, 230, 255, 0.25);
+    background: radial-gradient(circle at top, rgba(120, 160, 255, 0.15), transparent 55%);
+  }
+
+  /* Parallax layers */
+  .layer {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transition: opacity 0.8s ease, filter 0.8s ease;
+    will-change: transform;
+  }
+
+  .layer.back {
+    filter: blur(1px) brightness(0.8);
+  }
+  .layer.mid {
+    mix-blend-mode: screen;
+  }
+  .layer.front {
+    mix-blend-mode: screen;
+    opacity: 0.9;
+  }
+
+  /* Neon elements */
+  .neon-sign {
+    position: absolute;
+    width: 120px;
+    height: 260px;
+    right: 12%;
+    top: 18%;
+    border-radius: 10px;
+    background: linear-gradient(to bottom, #ff4b9b, #ffb86c);
+    box-shadow:
+      0 0 18px rgba(255, 120, 200, 0.9),
+      0 0 40px rgba(255, 120, 200, 0.7);
+    opacity: 0.9;
+    animation: neonFlicker 3.5s infinite;
+  }
+
+  .neon-sign::after {
+    content: "雨夜";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+    writing-mode: vertical-rl;
+    letter-spacing: 0.2em;
+  }
+
+  @keyframes neonFlicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 0.95; }
+    19%, 23%, 54% { opacity: 0.3; }
+    24%, 56% { opacity: 0.6; }
+  }
+
+  .traffic-glow {
+    position: absolute;
+    bottom: 8%;
+    left: 10%;
+    width: 220px;
+    height: 80px;
+    background:
+      radial-gradient(circle at 20% 40%, rgba(255, 80, 80, 0.9), transparent 55%),
+      radial-gradient(circle at 60% 60%, rgba(120, 200, 255, 0.9), transparent 55%),
+      radial-gradient(circle at 85% 50%, rgba(255, 220, 150, 0.9), transparent 55%);
+    filter: blur(10px);
+    opacity: 0.9;
+    animation: trafficPulse 4s ease-in-out infinite;
+  }
+
+  @keyframes trafficPulse {
+    0%, 100% { opacity: 0.7; transform: translateX(0); }
+    50% { opacity: 1; transform: translateX(10px); }
+  }
+
+  /* Rain canvas */
+  #rainCanvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Glass overlay */
+  .glass-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.08), transparent 40%),
+      radial-gradient(circle at top left, rgba(180, 210, 255, 0.18), transparent 55%);
+    mix-blend-mode: screen;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .droplet {
+    position: absolute;
+    width: 2px;
+    height: 40px;
+    border-radius: 999px;
+    background: linear-gradient(to bottom, rgba(220, 240, 255, 0.9), transparent);
+    opacity: 0.7;
+    filter: blur(0.3px);
+    animation: dropletSlide 5s linear infinite;
+  }
+
+  @keyframes dropletSlide {
+    0% { transform: translateY(-40px); opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { transform: translateY(260px); opacity: 0; }
+  }
+
+  /* Bottom UI bar */
+  .bottom-bar {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+    height: 40px;
+    border-radius: 999px;
+    background: rgba(5, 10, 25, 0.9);
+    border: 1px solid rgba(140, 190, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    backdrop-filter: blur(12px);
+    font-size: 12px;
+    color: #b9c9ff;
+  }
+
+  .scene-controls {
+    display: flex;
+    gap: 6px;
+  }
+
+  .scene-btn {
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(150, 200, 255, 0.6);
+    background: rgba(10, 18, 40, 0.9);
+    color: #e5f0ff;
+    cursor: pointer;
+    font-size: 11px;
+  }
+
+  .scene-btn.active {
+    background: linear-gradient(135deg, #3b6cff, #9f7bff);
+    border-color: rgba(220, 240, 255, 0.9);
+    box-shadow: 0 0 14px rgba(120, 180, 255, 0.8);
+  }
+
+  .status {
+    opacity: 0.9;
+  }
+
+  @media (max-width: 768px) {
+    .window-frame {
+      height: 70vh;
+    }
+    .bottom-bar {
+      font-size: 11px;
+    }
+    .scene-btn {
+      padding: 4px 8px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="window-wrap">
+  <div class="window-frame">
+    <div class="inner-frame">
+      <!-- Parallax layers -->
+      <div id="layer-back" class="layer back"></div>
+      <div id="layer-mid" class="layer mid"></div>
+      <div id="layer-front" class="layer front"></div>
+
+      <!-- Neon + traffic -->
+      <div class="neon-sign"></div>
+      <div class="traffic-glow"></div>
+
+      <!-- Rain + glass -->
+      <canvas id="rainCanvas"></canvas>
+      <div class="glass-overlay"></div>
+      <!-- droplets will be injected by JS -->
+    </div>
+
+    <!-- Bottom UI -->
+    <div class="bottom-bar">
+      <div class="scene-controls">
+        <button class="scene-btn active" data-scene="night">🌃 Night Rain</button>
+        <button class="scene-btn" data-scene="sunset">🌇 Sunset</button>
+        <button class="scene-btn" data-scene="clear">🌤️ Clear Evening</button>
+        <button class="scene-btn" data-scene="storm">⛈️ Heavy Storm</button>
+      </div>
+      <div class="status" id="statusText">
+        Scene: Night Rain · View: Tokyo high‑rise · Mode: RTX brain
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* SCENE DATA */
+const scenes = {
+  night: {
+    back: "https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=1600&q=80",
+    mid: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    front: "https://images.unsplash.com/photo-1518300670681-9bbd45a4a8bb?auto=format&fit=crop&w=1600&q=80",
+    status: "Scene: Night Rain · Neon signs humming · City breathing quietly"
+  },
+  sunset: {
+    back: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    mid: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    front: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    status: "Scene: Sunset · Sky fading to purple · Windows glowing warm"
+  },
+  clear: {
+    back: "https://images.unsplash.com/photo-1500043201641-5f04c36c12c7?auto=format&fit=crop&w=1600&q=80",
+    mid: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    front: "https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0?auto=format&fit=crop&w=1600&q=80",
+    status: "Scene: Clear Evening · Air crisp · City lights sharp"
+  },
+  storm: {
+    back: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80",
+    mid: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80",
+    front: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80",
+    status: "Scene: Heavy Storm · Thunder distant · Rain racing down the glass"
+  }
+};
+
+const layerBack = document.getElementById("layer-back");
+const layerMid = document.getElementById("layer-mid");
+const layerFront = document.getElementById("layer-front");
+const statusText = document.getElementById("statusText");
+const buttons = document.querySelectorAll(".scene-btn");
+
+function setScene(name) {
+  const scene = scenes[name];
+  if (!scene) return;
+
+  [layerBack, layerMid, layerFront].forEach(layer => {
+    layer.style.opacity = 0;
+  });
+
+  setTimeout(() => {
+    layerBack.style.backgroundImage = `url(${scene.back})`;
+    layerMid.style.backgroundImage = `url(${scene.mid})`;
+    layerFront.style.backgroundImage = `url(${scene.front})`;
+
+    [layerBack, layerMid, layerFront].forEach(layer => {
+      layer.style.opacity = 1;
+    });
+
+    statusText.textContent = scene.status;
+  }, 350);
+
+  buttons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.scene === name);
+  });
+}
+
+/* Parallax mouse move */
+document.addEventListener("mousemove", (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 2;
+  const y = (e.clientY / window.innerHeight - 0.5) * 2;
+
+  layerBack.style.transform = `translate(${x * -8}px, ${y * -4}px) scale(1.02)`;
+  layerMid.style.transform = `translate(${x * -16}px, ${y * -8}px) scale(1.03)`;
+  layerFront.style.transform = `translate(${x * -24}px, ${y * -12}px) scale(1.04)`;
+});
+
+/* Rain canvas */
+const canvas = document.getElementById("rainCanvas");
+const ctx = canvas.getContext("2d");
+let W, H;
+
+function resize() {
+  W = canvas.width = canvas.offsetWidth;
+  H = canvas.height = canvas.offsetHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+let drops = [];
+const DROP_COUNT = 260;
+
+function initRain() {
+  drops = [];
+  for (let i = 0; i < DROP_COUNT; i++) {
+    drops.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      len: 10 + Math.random() * 25,
+      speed: 4 + Math.random() * 6,
+      opacity: 0.3 + Math.random() * 0.5
+    });
+  }
+}
+initRain();
+
+function drawRain() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(190,210,255,0.7)";
+  ctx.lineWidth = 1;
+
+  drops.forEach(d => {
+    ctx.globalAlpha = d.opacity;
+    ctx.beginPath();
+    ctx.moveTo(d.x, d.y);
+    ctx.lineTo(d.x + d.len * 0.2, d.y + d.len);
+    ctx.stroke();
+
+    d.y += d.speed;
+    d.x += d.speed * 0.2;
+    if (d.y > H + 20) {
+      d.y = -20;
+      d.x = Math.random() * W;
+    }
+  });
+
+  requestAnimationFrame(drawRain);
+}
+drawRain();
+
+/* Glass droplets */
+const innerFrame = document.querySelector(".inner-frame");
+function spawnDroplets(count = 18) {
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement("div");
+    d.className = "droplet";
+    d.style.left = Math.random() * 100 + "%";
+    d.style.top = (Math.random() * 40 - 10) + "%";
+    d.style.animationDelay = (Math.random() * 5) + "s";
+    d.style.height = (30 + Math.random() * 40) + "px";
+    innerFrame.appendChild(d);
+  }
+}
+spawnDroplets();
+
+/* Scene button events */
+buttons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    setScene(btn.dataset.scene);
+  });
+});
+
+/* Default scene */
+setScene("night");
+</script>
+</body>
+</html>
