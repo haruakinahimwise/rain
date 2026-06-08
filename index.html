@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Nature RTX Window — Working Version</title>
+<title>Nature RTX Window — FIXED</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -86,10 +86,10 @@
 
   <div class="ui">
     <div style="display:flex; gap:6px;">
-      <button class="scene" data-bg="https://images.unsplash.com/photo-1501785888041-af3ef285b470">🌄 Mountains</button>
-      <button class="scene" data-bg="https://images.unsplash.com/photo-1500534314211-0a24cd03f2c0">🌫 Mist Lake</button>
-      <button class="scene" data-bg="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee">🌇 Sunset</button>
-      <button class="scene" data-bg="https://images.unsplash.com/photo-1500043201641-5f04c36c12c7">🌤 Clear</button>
+      <button class="scene" data-bg="https://upload.wikimedia.org/wikipedia/commons/0/0c/Misty_mountain_lake.jpg">🌫 Mist</button>
+      <button class="scene" data-bg="https://upload.wikimedia.org/wikipedia/commons/3/3f/Forest_fog_valley.jpg">🌲 Forest</button>
+      <button class="scene" data-bg="https://upload.wikimedia.org/wikipedia/commons/5/5f/Mountain_range_panorama.jpg">⛰ Peaks</button>
+      <button class="scene" data-bg="https://upload.wikimedia.org/wikipedia/commons/4/4f/Mountain_sunset.jpg">🌇 Sunset</button>
     </div>
 
     <div>
@@ -124,7 +124,7 @@ sceneButtons.forEach(btn => {
 
 /* Default scene */
 layer.style.backgroundImage =
-  "url(https://images.unsplash.com/photo-1501785888041-af3ef285b470)";
+  "url(https://upload.wikimedia.org/wikipedia/commons/0/0c/Misty_mountain_lake.jpg)";
 sceneButtons[0].classList.add("active");
 
 /* Rain engine */
@@ -187,7 +187,7 @@ const whiteout = document.getElementById("whiteout");
 /* Rain slider */
 document.getElementById("rainSlider").addEventListener("input", e => {
   dropCount = Number(e.target.value);
-  speedMultiplier = 1 + (dropCount / 700) * 1.6; // heavier = faster
+  speedMultiplier = 1 + (dropCount / 700) * 1.6;
   initRain();
 
   const t = dropCount / 700;
